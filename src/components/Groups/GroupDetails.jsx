@@ -1,7 +1,19 @@
-import { UserPlus, Trash2, Users, Phone } from "lucide-react";
-import StatusButton from "../Common/StatusButton";
+import { useState } from "react";
+import { UserPlus, Trash2, Users, Phone, ChevronDown, ChevronUp } from "lucide-react";
+import StudentStatusBadge from "../Common/StudentStatusBadge";
+import StudentDailyAttendance from "../StudentDailyAttendance";
+import StudentPaymentCalculator from "../StudentPaymentCalculator";
 
-const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) => {
+const GroupDetails = ({ 
+  group, 
+  onAddStudent, 
+  onRemoveStudent, 
+  onToggleActive, 
+  onUpdateAttendance,
+  onUpdatePayment
+}) => {
+  const [expandedStudent, setExpandedStudent] = useState(null);
+  
   const calculateFinalFee = (monthlyFee, discount) => {
     return monthlyFee - (monthlyFee * discount / 100);
   };
@@ -13,6 +25,21 @@ const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) 
       return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8, 10)} ${cleaned.slice(10, 12)}`;
     }
     return phone;
+  };
+
+  const getStudentStats = (student) => {
+    const attendance = student.attendance || {};
+    const payments = student.payments || {};
+    const totalDays = Object.keys(attendance).length;
+    const presentDays = Object.values(attendance).filter(v => v === true).length;
+    const paidMonths = Object.values(payments).filter(v => v === true).length;
+    
+    return { presentDays, totalDays, paidMonths };
+  };
+
+  const toggleExpand = (studentId, e) => {
+    e.stopPropagation();
+    setExpandedStudent(expandedStudent === studentId ? null : studentId);
   };
 
   if (!group) {
@@ -31,6 +58,9 @@ const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) 
         <div>
           <h2 className="text-2xl font-bold text-gray-800">{group.name}</h2>
           <p className="text-gray-600 mt-1">👨‍🏫 {group.teacher} | 📅 {group.schedule}</p>
+          <p className="text-sm text-indigo-600 mt-1">
+            👥 {group.students.filter(s => s.isActive !== false).length} faol o'quvchi
+          </p>
         </div>
         <button
           onClick={onAddStudent}
@@ -42,75 +72,91 @@ const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) 
       </div>
 
       {group.students.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b-2 border-gray-200">
-              <tr>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">#</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">O'quvchi</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">Telefon</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">To'lov</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">Keldi/Kelmadi</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">To'lov holati</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">Amallar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {group.students.map((student, idx) => (
-                <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-all">
-                  <td className="p-3 text-gray-600">{idx + 1}</td>
-                  <td className="p-3">
-                    <div className="font-semibold text-gray-800">
-                      {student.name} {student.surname}
+        <div className="space-y-4">
+          {group.students.map((student, idx) => {
+            const stats = getStudentStats(student);
+            const isExpanded = expandedStudent === student.id;
+            const isActive = student.isActive !== false;
+            
+            return (
+              <div key={student.id} className={`border rounded-xl overflow-hidden ${!isActive ? 'opacity-60' : ''}`}>
+                <div className={`p-4 ${!isActive ? 'bg-gray-100' : 'bg-white'} hover:bg-gray-50 transition-all`}>
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="font-semibold text-gray-800">
+                          {idx + 1}. {student.name} {student.surname}
+                        </span>
+                        <StudentStatusBadge 
+                          isActive={isActive}
+                          onToggle={() => onToggleActive(group.id, student.id)}
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {formatPhone(student.phone)}
+                        </span>
+                        <span>💰 {student.monthlyFee.toLocaleString()} so'm</span>
+                        <span>🎁 {student.discount}% chegirma</span>
+                        <span className="text-green-600 font-semibold">
+                          {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm/oy
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 mt-2 text-xs">
+                        <span className="text-blue-600">
+                          📊 Davomat: {stats.presentDays}/{stats.totalDays} kun ({stats.totalDays > 0 ? ((stats.presentDays/stats.totalDays)*100).toFixed(1) : 0}%)
+                        </span>
+                        <span className="text-green-600">
+                          💰 To'lov: {stats.paidMonths}/6 oy
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {student.monthlyFee.toLocaleString()} so'm - {student.discount}%
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => toggleExpand(student.id, e)}
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-all"
+                      >
+                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoveStudent(group.id, student.id);
+                        }}
+                        className="text-red-600 hover:text-red-800 transition-all p-2"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                    <div className="text-xs text-green-600 font-semibold">
-                      Chegirma bilan: {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-3 h-3 text-gray-400" />
-                      <a href={`tel:${student.phone}`} className="text-gray-600 hover:text-indigo-600">
-                        {formatPhone(student.phone)}
-                      </a>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="text-sm font-semibold text-green-600">
-                      {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <StatusButton
-                      status={student.attended}
-                      onToggle={() => onToggleStatus(group.id, student.id, "attended")}
-                      labelTrue="Keldi"
-                      labelFalse="Kelmadi"
+                  </div>
+                </div>
+                
+                {isExpanded && isActive && (
+                  <div className="border-t p-4 bg-gray-50" onClick={(e) => e.stopPropagation()}>
+                    <StudentDailyAttendance 
+                      student={student}
+                      onUpdateAttendance={(studentId, dateKey, status) => 
+                        onUpdateAttendance(group.id, studentId, dateKey, status)
+                      }
                     />
-                  </td>
-                  <td className="p-3">
-                    <StatusButton
-                      status={student.paid}
-                      onToggle={() => onToggleStatus(group.id, student.id, "paid")}
-                      labelTrue="To'ladi"
-                      labelFalse="To'lamadi"
+                    <StudentPaymentCalculator 
+                      student={student}
+                      onUpdatePayment={(studentId, monthKey, status, paymentDate, amount) => 
+                        onUpdatePayment(group.id, studentId, monthKey, status, paymentDate, amount)
+                      }
                     />
-                  </td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => onRemoveStudent(group.id, student.id)}
-                      className="text-red-600 hover:text-red-800 transition-all"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                )}
+                
+                {isExpanded && !isActive && (
+                  <div className="border-t p-4 bg-gray-100 text-center text-gray-500">
+                    ⚠️ O'quvchi no faol holatda. Davomat va to'lov qilib bo'lmaydi.
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-xl">

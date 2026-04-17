@@ -1,8 +1,9 @@
 import { Trash2, Users, Phone } from "lucide-react";
 
-const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
+const RegisteredStudentsList = ({ students = [], onDeleteStudent }) => {
   const calculateFinalFee = (monthlyFee, discount) => {
-    return monthlyFee - (monthlyFee * discount / 100);
+    if (!monthlyFee) return 0;
+    return monthlyFee - (monthlyFee * (discount || 0) / 100);
   };
 
   const formatPhone = (phone) => {
@@ -16,6 +17,9 @@ const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
     }
     return phone;
   };
+
+  // Agar students undefined yoki null bo'lsa, empty array ishlatamiz
+  const studentList = students || [];
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -35,47 +39,52 @@ const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
             </tr>
           </thead>
           <tbody>
-            {students.map((student, idx) => (
-              <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-all">
-                <td className="p-4 text-gray-600">{idx + 1}</td>
-                <td className="p-4">
-                  <div className="font-semibold text-gray-800">
-                    {student.name} {student.surname}
-                  </div>
-                 </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <a href={`tel:${student.phone}`} className="hover:text-indigo-600 text-sm">
-                      {formatPhone(student.phone)}
-                    </a>
-                  </div>
-                 </td>
-                <td className="p-4 text-gray-700">{student.course}</td>
-                <td className="p-4 text-gray-700">{student.monthlyFee.toLocaleString()} so'm</td>
-                <td className="p-4 text-gray-700">{student.discount}%</td>
-                <td className="p-4 font-semibold text-green-600">
-                  {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm
-                 </td>
-                <td className="p-4 text-gray-500 text-sm">{student.registeredAt}</td>
-                <td className="p-4">
-                  <button
-                    onClick={() => onDeleteStudent(student.id)}
-                    className="text-red-600 hover:text-red-800 transition-all"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                 </td>
-               </tr>
-            ))}
+            {studentList.length > 0 ? (
+              studentList.map((student, idx) => (
+                <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50 transition-all">
+                  <td className="p-4 text-gray-600">{idx + 1}</td>
+                  <td className="p-4">
+                    <div className="font-semibold text-gray-800">
+                      {student.name || ""} {student.surname || ""}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <a href={`tel:${student.phone || ""}`} className="hover:text-indigo-600 text-sm">
+                        {formatPhone(student.phone)}
+                      </a>
+                    </div>
+                  </td>
+                  <td className="p-4 text-gray-700">{student.course || ""}</td>
+                  <td className="p-4 text-gray-700">
+                    {(student.monthly_fee || student.monthlyFee || 0).toLocaleString()} so'm
+                  </td>
+                  <td className="p-4 text-gray-700">{(student.discount || 0)}%</td>
+                  <td className="p-4 font-semibold text-green-600">
+                    {calculateFinalFee(student.monthly_fee || student.monthlyFee || 0, student.discount).toLocaleString()} so'm
+                  </td>
+                  <td className="p-4 text-gray-500 text-sm">{student.registered_at || student.registeredAt || "-"}</td>
+                  <td className="p-4">
+                    <button
+                      onClick={() => onDeleteStudent(student.id)}
+                      className="text-red-600 hover:text-red-800 transition-all"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                   </td>
+                 </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="9" className="text-center py-12">
+                  <Users className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Hali ro'yxatdan o'tgan o'quvchi yo'q</p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
-        {students.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Hali ro'yxatdan o'tgan o'quvchi yo'q</p>
-          </div>
-        )}
       </div>
     </div>
   );
