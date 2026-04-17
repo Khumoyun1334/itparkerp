@@ -7,15 +7,6 @@ const AddStudentModal = ({ group, registeredStudents, onAddStudent, onClose }) =
     onAddStudent(group.id, studentData);
   };
 
-  const formatPhone = (phone) => {
-    if (!phone) return "Noma'lum";
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 12 && cleaned.startsWith('998')) {
-      return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8, 10)} ${cleaned.slice(10, 12)}`;
-    }
-    return phone;
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
@@ -32,7 +23,7 @@ const AddStudentModal = ({ group, registeredStudents, onAddStudent, onClose }) =
           <option value="" disabled>O'quvchi tanlang</option>
           {registeredStudents.map((student) => (
             <option key={student.id} value={JSON.stringify(student)}>
-              {student.name} {student.surname} - {student.course} ({formatPhone(student.phone)})
+              {student.name} {student.surname} - {student.course}
             </option>
           ))}
         </select>

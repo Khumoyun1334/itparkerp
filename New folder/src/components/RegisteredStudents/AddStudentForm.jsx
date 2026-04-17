@@ -5,7 +5,6 @@ const AddStudentForm = ({ onAddStudent }) => {
   const [newStudent, setNewStudent] = useState({
     name: "",
     surname: "",
-    phone: "",
     course: "",
     monthlyFee: "",
     discount: "0"
@@ -16,27 +15,12 @@ const AddStudentForm = ({ onAddStudent }) => {
   };
 
   const handleSubmit = () => {
-    if (!newStudent.name || !newStudent.surname || !newStudent.phone || !newStudent.course || !newStudent.monthlyFee) {
+    if (!newStudent.name || !newStudent.surname || !newStudent.course || !newStudent.monthlyFee) {
       alert("Barcha maydonlarni to'ldiring!");
       return;
     }
-    
-    // Telefon raqamni tekshirish
-    const phoneRegex = /^\+?998[0-9]{9}$|^0[0-9]{9}$/;
-    if (!phoneRegex.test(newStudent.phone.replace(/\s/g, ''))) {
-      alert("Telefon raqam noto'g'ri formatda! Masalan: +998901234567 yoki 901234567");
-      return;
-    }
-    
     onAddStudent(newStudent);
-    setNewStudent({ 
-      name: "", 
-      surname: "", 
-      phone: "", 
-      course: "", 
-      monthlyFee: "", 
-      discount: "0" 
-    });
+    setNewStudent({ name: "", surname: "", course: "", monthlyFee: "", discount: "0" });
   };
 
   return (
@@ -45,7 +29,7 @@ const AddStudentForm = ({ onAddStudent }) => {
         <UserPlus className="w-6 h-6 mr-2 text-indigo-600" />
         Yangi o'quvchi ro'yxatdan o'tkazish
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <input
           type="text"
           name="name"
@@ -59,14 +43,6 @@ const AddStudentForm = ({ onAddStudent }) => {
           name="surname"
           placeholder="Familiya"
           value={newStudent.surname}
-          onChange={handleChange}
-          className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500"
-        />
-        <input
-          type="tel"
-          name="phone"
-          placeholder="Telefon raqam (+998901234567)"
-          value={newStudent.phone}
           onChange={handleChange}
           className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500"
         />

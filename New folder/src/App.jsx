@@ -40,19 +40,10 @@ function App() {
 
   // O'quvchi funksiyalari
   const addRegisteredStudent = (studentData) => {
-    // Telefon raqamni tekshirish
-    const phoneRegex = /^\+?998[0-9]{9}$|^0[0-9]{9}$/;
-    const cleanPhone = studentData.phone.replace(/\s/g, '');
-    if (!phoneRegex.test(cleanPhone)) {
-      alert("Telefon raqam noto'g'ri formatda! Masalan: +998901234567 yoki 901234567");
-      return;
-    }
-    
     const newStudent = {
       id: Date.now(),
       name: studentData.name,
       surname: studentData.surname,
-      phone: cleanPhone,
       course: studentData.course,
       monthlyFee: parseFloat(studentData.monthlyFee),
       discount: parseFloat(studentData.discount) || 0,
@@ -85,7 +76,6 @@ function App() {
             id: student.id,
             name: student.name,
             surname: student.surname,
-            phone: student.phone,
             monthlyFee: student.monthlyFee,
             discount: student.discount,
             attended: false,
@@ -123,7 +113,6 @@ function App() {
         id: student.id,
         name: student.name,
         surname: student.surname,
-        phone: student.phone,
         course: group.name,
         monthlyFee: student.monthlyFee,
         discount: student.discount,
@@ -254,7 +243,7 @@ function App() {
           </div>
         )}
 
-        {/* Ro'yxatdan o'tgan o'quvchilar bo'limi - FAQAT BIR MARTA */}
+        {/* Ro'yxatdan o'tgan o'quvchilar bo'limi */}
         {activeTab === "registered" && (
           <div>
             <AddStudentForm onAddStudent={addRegisteredStudent} />
@@ -269,7 +258,6 @@ function App() {
         <div className="mt-6 text-center text-sm text-gray-600 bg-white rounded-lg p-3">
           <p>💾 Barcha ma'lumotlar brauzeringizda saqlanadi. Sahifa yangilansa ham yo'qolmaydi!</p>
           <p className="text-xs mt-1">📌 Ma'lumotlarni zaxiralash uchun "Eksport" tugmasidan foydalaning</p>
-          <p className="text-xs mt-1 text-green-600">✅ Jami o'quvchilar: {registeredStudents.length} ta | Guruhlar: {groups.length} ta</p>
         </div>
       </div>
     </div>

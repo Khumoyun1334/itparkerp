@@ -1,18 +1,9 @@
-import { UserPlus, Trash2, Users, Phone } from "lucide-react";
+import { UserPlus, Trash2, Users } from "lucide-react";
 import StatusButton from "../Common/StatusButton";
 
 const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) => {
   const calculateFinalFee = (monthlyFee, discount) => {
     return monthlyFee - (monthlyFee * discount / 100);
-  };
-
-  const formatPhone = (phone) => {
-    if (!phone) return "Noma'lum";
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 12 && cleaned.startsWith('998')) {
-      return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8, 10)} ${cleaned.slice(10, 12)}`;
-    }
-    return phone;
   };
 
   if (!group) {
@@ -48,7 +39,6 @@ const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) 
               <tr>
                 <th className="p-3 text-left text-sm font-semibold text-gray-700">#</th>
                 <th className="p-3 text-left text-sm font-semibold text-gray-700">O'quvchi</th>
-                <th className="p-3 text-left text-sm font-semibold text-gray-700">Telefon</th>
                 <th className="p-3 text-left text-sm font-semibold text-gray-700">To'lov</th>
                 <th className="p-3 text-left text-sm font-semibold text-gray-700">Keldi/Kelmadi</th>
                 <th className="p-3 text-left text-sm font-semibold text-gray-700">To'lov holati</th>
@@ -68,14 +58,6 @@ const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) 
                     </div>
                     <div className="text-xs text-green-600 font-semibold">
                       Chegirma bilan: {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-3 h-3 text-gray-400" />
-                      <a href={`tel:${student.phone}`} className="text-gray-600 hover:text-indigo-600">
-                        {formatPhone(student.phone)}
-                      </a>
                     </div>
                   </td>
                   <td className="p-3">
@@ -110,7 +92,7 @@ const GroupDetails = ({ group, onAddStudent, onToggleStatus, onRemoveStudent }) 
                 </tr>
               ))}
             </tbody>
-          </table>
+           </table>
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-xl">

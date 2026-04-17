@@ -1,20 +1,8 @@
-import { Trash2, Users, Phone } from "lucide-react";
+import { Trash2, Users } from "lucide-react";
 
 const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
   const calculateFinalFee = (monthlyFee, discount) => {
     return monthlyFee - (monthlyFee * discount / 100);
-  };
-
-  const formatPhone = (phone) => {
-    if (!phone) return "Noma'lum";
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 12 && cleaned.startsWith('998')) {
-      return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8, 10)} ${cleaned.slice(10, 12)}`;
-    }
-    if (cleaned.length === 9) {
-      return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5, 7)} ${cleaned.slice(7, 9)}`;
-    }
-    return phone;
   };
 
   return (
@@ -25,7 +13,6 @@ const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
             <tr>
               <th className="p-4 text-left">#</th>
               <th className="p-4 text-left">FIO</th>
-              <th className="p-4 text-left">Telefon</th>
               <th className="p-4 text-left">Kurs</th>
               <th className="p-4 text-left">Oylik to'lov</th>
               <th className="p-4 text-left">Chegirma</th>
@@ -43,20 +30,12 @@ const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
                     {student.name} {student.surname}
                   </div>
                  </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <a href={`tel:${student.phone}`} className="hover:text-indigo-600 text-sm">
-                      {formatPhone(student.phone)}
-                    </a>
-                  </div>
-                 </td>
                 <td className="p-4 text-gray-700">{student.course}</td>
                 <td className="p-4 text-gray-700">{student.monthlyFee.toLocaleString()} so'm</td>
                 <td className="p-4 text-gray-700">{student.discount}%</td>
                 <td className="p-4 font-semibold text-green-600">
                   {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm
-                 </td>
+                </td>
                 <td className="p-4 text-gray-500 text-sm">{student.registeredAt}</td>
                 <td className="p-4">
                   <button
@@ -65,7 +44,7 @@ const RegisteredStudentsList = ({ students, onDeleteStudent }) => {
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
-                 </td>
+                </td>
                </tr>
             ))}
           </tbody>
