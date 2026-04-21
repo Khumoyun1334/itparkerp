@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Calendar, ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [localAttendance, setLocalAttendance] = useState(student.attendance || {});
   
   const getDaysInMonth = (year, month) => {
     return new Date(year, month + 1, 0).getDate();
@@ -22,37 +23,70 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
     "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"
   ];
   
+  const weekDays = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+  
   const getAttendanceKey = (day) => {
     return `${year}-${month + 1}-${day}`;
   };
   
   const getAttendanceStatus = (day) => {
     const key = getAttendanceKey(day);
-    return student.attendance?.[key] || false;
+    // Avval localAttendance dan, keyin student.attendance dan o'qiymiz
+    if (localAttendance[key] !== undefined) {
+      return localAttendance[key];
+    }
+    return student.attendance?.[key] === true;
   };
   
-  const toggleAttendance = (day, e) => {
-    e.stopPropagation(); // EVENT BUBBLING NI TO'XTATADI!
+  // TO'G'RILANGAN: event bubbling ni to'xtatib, 1 marta bosganda ishlaydi
+  const toggleAttendance = async (day, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     const key = getAttendanceKey(day);
-    onUpdateAttendance(student.id, key, !getAttendanceStatus(day));
+    const currentStatus = getAttendanceStatus(day);
+    const newStatus = !currentStatus;
+    
+    // Local state ni darhol yangilash (UI tezroq yangilanadi)
+    setLocalAttendance(prev => ({
+      ...prev,
+      [key]: newStatus
+    }));
+    
+    // Parent komponentga yangilashni yuborish
+    if (onUpdateAttendance) {
+      await onUpdateAttendance(student.id, key, newStatus);
+    }
+    
+    return false;
   };
   
   const prevMonth = (e) => {
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCurrentDate(new Date(year, month - 1, 1));
+    // Oy o'zgarganda localAttendance ni tozalash
+    setLocalAttendance({});
   };
   
   const nextMonth = (e) => {
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCurrentDate(new Date(year, month + 1, 1));
+    setLocalAttendance({});
   };
   
   const getMonthlyStats = () => {
     let present = 0;
     let absent = 0;
     for (let day = 1; day <= daysInMonth; day++) {
-      const key = getAttendanceKey(day);
-      if (student.attendance?.[key]) {
+      if (getAttendanceStatus(day)) {
         present++;
       } else {
         absent++;
@@ -65,7 +99,7 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
   const attendanceRate = stats.total > 0 ? (stats.present / stats.total * 100).toFixed(1) : 0;
   
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden mt-4" onClick={(e) => e.stopPropagation()}>
+    <div className="bg-white rounded-2xl shadow-xl overflow-hidden mt-4">
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4">
         <div className="flex justify-between items-center">
           <h3 className="text-white font-bold flex items-center gap-2">
@@ -76,6 +110,7 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
             <button 
               onClick={prevMonth} 
               className="text-white hover:bg-white/20 p-1 rounded transition-all"
+              type="button"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -85,6 +120,7 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
             <button 
               onClick={nextMonth} 
               className="text-white hover:bg-white/20 p-1 rounded transition-all"
+              type="button"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -93,7 +129,7 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
       </div>
       
       <div className="p-4">
-        {/* Statistika paneli */}
+        {/* Statistika */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-green-50 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-green-600">{stats.present}</div>
@@ -111,23 +147,21 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
         
         {/* Hafta kunlari */}
         <div className="grid grid-cols-7 gap-2 mb-2">
-          {["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"].map(day => (
+          {weekDays.map(day => (
             <div key={day} className="text-center text-sm font-semibold text-gray-500 py-2">
               {day}
             </div>
           ))}
         </div>
         
-        {/* Kalendar grid */}
+        {/* Kalendar */}
         <div className="grid grid-cols-7 gap-2">
-          {/* Bo'sh kunlar */}
           {Array.from({ length: firstDay === 0 ? 6 : firstDay - 1 }).map((_, i) => (
             <div key={`empty-${i}`} className="bg-gray-50 rounded-lg p-2 text-center text-gray-300">
               -
             </div>
           ))}
           
-          {/* Kunlar */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const isPresent = getAttendanceStatus(day);
@@ -139,8 +173,9 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
               <button
                 key={day}
                 onClick={(e) => toggleAttendance(day, e)}
+                type="button"
                 className={`
-                  relative p-2 rounded-lg text-center transition-all cursor-pointer
+                  p-2 rounded-lg text-center transition-all cursor-pointer
                   ${isPresent 
                     ? "bg-green-500 text-white hover:bg-green-600" 
                     : "bg-red-100 text-red-800 hover:bg-red-200"
@@ -149,9 +184,7 @@ const StudentDailyAttendance = ({ student, onUpdateAttendance }) => {
                 `}
               >
                 <div className="text-sm font-semibold">{day}</div>
-                <div className="text-xs mt-1">
-                  {isPresent ? "✅" : "❌"}
-                </div>
+                <div className="text-xs mt-1">{isPresent ? "✅" : "❌"}</div>
               </button>
             );
           })}

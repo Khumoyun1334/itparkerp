@@ -18,7 +18,7 @@ function App() {
     data: groups, 
     loading: groupsLoading, 
     addData: addGroupToDB, 
-    updateData: updateGroupInDB,
+    updateData: updateGroupInDB, 
     deleteData: deleteGroupFromDB,
     refresh: refreshGroups
   } = useSupabase("groups");
@@ -103,25 +103,21 @@ function App() {
     }
   };
 
-  // GURUHGA O'QUVCHI QO'SHISH (TO'LIQ FUNKSIYA)
+  // Guruhga o'quvchi qo'shish
   const handleAddStudentToGroup = async (groupId, studentJSON) => {
     const student = JSON.parse(studentJSON);
-    
-    // Hozirgi guruhni topish
     const currentGroup = groups.find(g => g.id == groupId);
     if (!currentGroup) {
       alert("Guruh topilmadi!");
       return;
     }
     
-    // O'quvchi allaqachon guruhdami?
     const existingStudents = currentGroup.students || [];
     if (existingStudents.some(s => s.id == student.id)) {
       alert("Bu o'quvchi allaqachon guruhda!");
       return;
     }
     
-    // Yangi o'quvchini qo'shish
     const updatedStudents = [...existingStudents, {
       id: student.id,
       name: student.name,
@@ -129,6 +125,7 @@ function App() {
       phone: student.phone,
       monthlyFee: student.monthly_fee,
       discount: student.discount,
+      isActive: true,
       attended: false,
       paid: false,
       attendance: {},
@@ -137,24 +134,17 @@ function App() {
       paymentAmounts: {}
     }];
     
-    // Guruhni yangilash
     const result = await updateGroupInDB(parseInt(groupId), {
       ...currentGroup,
       students: updatedStudents
     });
     
     if (result) {
-      // Ro'yxatdan o'tgan o'quvchilardan o'chirish
       await deleteStudentFromDB(parseInt(student.id));
-      
       alert(`✅ "${student.name} ${student.surname}" guruhga qo'shildi!`);
       setShowAddStudentModal(false);
-      
-      // Ma'lumotlarni yangilash
       await refreshGroups();
       await refreshStudents();
-      
-      // Tanlangan guruhni yangilash
       const updatedGroup = groups.find(g => g.id == groupId);
       setSelectedGroup(updatedGroup);
     } else {
@@ -171,7 +161,6 @@ function App() {
       const studentToRemove = currentGroup.students?.find(s => s.id == studentId);
       if (!studentToRemove) return;
       
-      // Guruhdan o'chirish
       const updatedStudents = currentGroup.students.filter(s => s.id != studentId);
       const result = await updateGroupInDB(parseInt(groupId), {
         ...currentGroup,
@@ -179,7 +168,6 @@ function App() {
       });
       
       if (result) {
-        // O'quvchini ro'yxatga qaytarish
         await addStudentToDB({
           name: studentToRemove.name,
           surname: studentToRemove.surname,
@@ -192,12 +180,35 @@ function App() {
         alert(`✅ O'quvchi guruhdan chiqarildi!`);
         await refreshGroups();
         await refreshStudents();
-        
         const updatedGroup = groups.find(g => g.id == groupId);
         setSelectedGroup(updatedGroup);
       } else {
         alert("❌ Xatolik yuz berdi!");
       }
+    }
+  };
+
+  // O'quvchini faol/no faol qilish
+  const handleToggleActive = async (groupId, studentId) => {
+    const currentGroup = groups.find(g => g.id == groupId);
+    if (!currentGroup) return;
+    
+    const updatedStudents = currentGroup.students.map(s => {
+      if (s.id == studentId) {
+        return { ...s, isActive: s.isActive === false ? true : false };
+      }
+      return s;
+    });
+    
+    const result = await updateGroupInDB(parseInt(groupId), {
+      ...currentGroup,
+      students: updatedStudents
+    });
+    
+    if (result) {
+      await refreshGroups();
+      const updatedGroup = groups.find(g => g.id == groupId);
+      setSelectedGroup(updatedGroup);
     }
   };
 
@@ -219,13 +230,16 @@ function App() {
       return s;
     });
     
-    await updateGroupInDB(parseInt(groupId), {
+    const result = await updateGroupInDB(parseInt(groupId), {
       ...currentGroup,
       students: updatedStudents
     });
     
-    await refreshGroups();
-    setSelectedGroup(groups.find(g => g.id == groupId));
+    if (result) {
+      await refreshGroups();
+      const updatedGroup = groups.find(g => g.id == groupId);
+      setSelectedGroup(updatedGroup);
+    }
   };
 
   // To'lovni yangilash
@@ -254,16 +268,18 @@ function App() {
       return s;
     });
     
-    await updateGroupInDB(parseInt(groupId), {
+    const result = await updateGroupInDB(parseInt(groupId), {
       ...currentGroup,
       students: updatedStudents
     });
     
-    await refreshGroups();
-    setSelectedGroup(groups.find(g => g.id == groupId));
+    if (result) {
+      await refreshGroups();
+      const updatedGroup = groups.find(g => g.id == groupId);
+      setSelectedGroup(updatedGroup);
+    }
   };
 
-  // Yuklanayotgan holat
   if (groupsLoading || studentsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
@@ -292,6 +308,7 @@ function App() {
               <button
                 onClick={() => setShowAddGroupForm(true)}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 mb-6"
+                type="button"
               >
                 ➕ Yangi guruh yaratish
               </button>
@@ -314,7 +331,7 @@ function App() {
                   group={selectedGroup}
                   onAddStudent={() => setShowAddStudentModal(true)}
                   onRemoveStudent={handleRemoveStudentFromGroup}
-                  onToggleActive={() => {}}
+                  onToggleActive={handleToggleActive}
                   onUpdateAttendance={handleUpdateAttendance}
                   onUpdatePayment={handleUpdatePayment}
                 />

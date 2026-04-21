@@ -24,6 +24,9 @@ const GroupDetails = ({
     if (cleaned.length === 12 && cleaned.startsWith('998')) {
       return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5, 8)} ${cleaned.slice(8, 10)} ${cleaned.slice(10, 12)}`;
     }
+    if (cleaned.length === 9) {
+      return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5, 7)} ${cleaned.slice(7, 9)}`;
+    }
     return phone;
   };
 
@@ -38,8 +41,47 @@ const GroupDetails = ({
   };
 
   const toggleExpand = (studentId, e) => {
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setExpandedStudent(expandedStudent === studentId ? null : studentId);
+  };
+
+  // Davomatni yangilash
+  const handleUpdateAttendance = (studentId, dateKey, status) => {
+    if (onUpdateAttendance) {
+      onUpdateAttendance(group.id, studentId, dateKey, status);
+    }
+  };
+
+  // To'lovni yangilash
+  const handleUpdatePayment = (studentId, monthKey, status, paymentDate, amount) => {
+    if (onUpdatePayment) {
+      onUpdatePayment(group.id, studentId, monthKey, status, paymentDate, amount);
+    }
+  };
+
+  // O'quvchini o'chirish
+  const handleRemoveStudent = (studentId, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onRemoveStudent) {
+      onRemoveStudent(group.id, studentId);
+    }
+  };
+
+  // Faollikni o'zgartirish
+  const handleToggleActive = (studentId, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (onToggleActive) {
+      onToggleActive(group.id, studentId);
+    }
   };
 
   if (!group) {
@@ -59,19 +101,23 @@ const GroupDetails = ({
           <h2 className="text-2xl font-bold text-gray-800">{group.name}</h2>
           <p className="text-gray-600 mt-1">👨‍🏫 {group.teacher} | 📅 {group.schedule}</p>
           <p className="text-sm text-indigo-600 mt-1">
-            👥 {group.students.filter(s => s.isActive !== false).length} faol o'quvchi
+            👥 {group.students?.filter(s => s.isActive !== false).length || 0} faol o'quvchi
           </p>
         </div>
         <button
-          onClick={onAddStudent}
+          onClick={(e) => {
+            e.preventDefault();
+            onAddStudent();
+          }}
           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
+          type="button"
         >
           <UserPlus className="w-5 h-5" />
           O'quvchi qo'shish
         </button>
       </div>
 
-      {group.students.length > 0 ? (
+      {group.students && group.students.length > 0 ? (
         <div className="space-y-4">
           {group.students.map((student, idx) => {
             const stats = getStudentStats(student);
@@ -89,7 +135,7 @@ const GroupDetails = ({
                         </span>
                         <StudentStatusBadge 
                           isActive={isActive}
-                          onToggle={() => onToggleActive(group.id, student.id)}
+                          onToggle={() => handleToggleActive(student.id)}
                         />
                       </div>
                       <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-600">
@@ -97,15 +143,15 @@ const GroupDetails = ({
                           <Phone className="w-3 h-3" />
                           {formatPhone(student.phone)}
                         </span>
-                        <span>💰 {student.monthlyFee.toLocaleString()} so'm</span>
-                        <span>🎁 {student.discount}% chegirma</span>
+                        <span>💰 {student.monthlyFee?.toLocaleString() || 0} so'm</span>
+                        <span>🎁 {student.discount || 0}% chegirma</span>
                         <span className="text-green-600 font-semibold">
-                          {calculateFinalFee(student.monthlyFee, student.discount).toLocaleString()} so'm/oy
+                          {calculateFinalFee(student.monthlyFee || 0, student.discount || 0).toLocaleString()} so'm/oy
                         </span>
                       </div>
                       <div className="flex items-center gap-4 mt-2 text-xs">
                         <span className="text-blue-600">
-                          📊 Davomat: {stats.presentDays}/{stats.totalDays} kun ({stats.totalDays > 0 ? ((stats.presentDays/stats.totalDays)*100).toFixed(1) : 0}%)
+                          📊 Davomat: {stats.presentDays}/{stats.totalDays || 0} kun ({stats.totalDays > 0 ? ((stats.presentDays/stats.totalDays)*100).toFixed(1) : 0}%)
                         </span>
                         <span className="text-green-600">
                           💰 To'lov: {stats.paidMonths}/6 oy
@@ -116,15 +162,14 @@ const GroupDetails = ({
                       <button
                         onClick={(e) => toggleExpand(student.id, e)}
                         className="p-2 hover:bg-gray-200 rounded-lg transition-all"
+                        type="button"
                       >
                         {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveStudent(group.id, student.id);
-                        }}
+                        onClick={(e) => handleRemoveStudent(student.id, e)}
                         className="text-red-600 hover:text-red-800 transition-all p-2"
+                        type="button"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -133,18 +178,14 @@ const GroupDetails = ({
                 </div>
                 
                 {isExpanded && isActive && (
-                  <div className="border-t p-4 bg-gray-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="border-t p-4 bg-gray-50">
                     <StudentDailyAttendance 
                       student={student}
-                      onUpdateAttendance={(studentId, dateKey, status) => 
-                        onUpdateAttendance(group.id, studentId, dateKey, status)
-                      }
+                      onUpdateAttendance={handleUpdateAttendance}
                     />
                     <StudentPaymentCalculator 
                       student={student}
-                      onUpdatePayment={(studentId, monthKey, status, paymentDate, amount) => 
-                        onUpdatePayment(group.id, studentId, monthKey, status, paymentDate, amount)
-                      }
+                      onUpdatePayment={handleUpdatePayment}
                     />
                   </div>
                 )}
@@ -163,8 +204,12 @@ const GroupDetails = ({
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500">Bu guruhda hali o'quvchi yo'q</p>
           <button
-            onClick={onAddStudent}
+            onClick={(e) => {
+              e.preventDefault();
+              onAddStudent();
+            }}
             className="mt-3 text-indigo-600 hover:text-indigo-700 font-semibold"
+            type="button"
           >
             + O'quvchi qo'shish
           </button>
