@@ -6,7 +6,7 @@ const Navbar = ({ activeTab, setActiveTab }) => {
           <div className="flex items-center space-x-3">
             <div className="text-3xl">📚</div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              EduTrack ERP
+              IT PARK ERP
             </h1>
           </div>
           <div className="flex space-x-2">
